@@ -1,1 +1,1 @@
-INSERT INTO Blogs ( title, author,url,likes) Values ("jing","bing""jingu",1);
+INSERT INTO Blog ( title, author,url,likes) Values ("jing","bing""jingu",1);
