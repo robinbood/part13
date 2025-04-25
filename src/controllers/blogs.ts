@@ -3,27 +3,13 @@ import 'express-async-errors';
 import { Request, Response } from 'express';
 const { Blog } = require('../models/blog');
 app.use(express.json());
-const jwt = require('jsonwebtoken');
-const { SECRET } = require('../utils/config');
-const blogFinder = async (req:Request, _res:Response, next:any) => {
+const tokenExtractor = require('../utils/middleware');
+import { CustomRequest } from '../utils/middleware';
+const blogFinder = async (req:CustomRequest, _res:Response, next:any) => {
     req.blog = await Blog.findByPk(req.params.id);
     next();
 };
-const tokenExtractor = (req:Request, res:Response, next:any) => {
-    const authorization = req.get('authorization');
-    if (authorization && authorization.toLowerCase().startsWith('bearer ')) {
-        try {
-            req.decodedToken = jwt.verify(authorization.substring(7), SECRET);
-        } catch (error:unknown) {
-            if (error instanceof Error) {
-                return res.status(401).json({ error: 'token invalid' });
-            } 
-        }
-    } else {
-        return res.status(401).json({ error: 'token missing' });
-    }
 
-}
 
 
 router.get('/', async (_req :Request, res:Response) => {
@@ -38,7 +24,7 @@ router.get('/', async (_req :Request, res:Response) => {
     res.json(blogs);
 });
 
-router.post('/',tokenExtractor, async (req:Request, res:Response) => {
+router.post('/',tokenExtractor, async (req:CustomRequest, res:Response) => {
     try {
         const user = await User.findByPk(req.decodedToken.id);
         const blog = await Blog.create({...req.body, userId: user.id,date: new Date()});
@@ -54,7 +40,7 @@ router.post('/',tokenExtractor, async (req:Request, res:Response) => {
     }
 });
 
-router.get('/:id',blogFinder, async (req:Request, res:Response) => {
+router.get('/:id',blogFinder, async (req:CustomRequest, res:Response) => {
     if (req.blog) {
         res.json(req.blog);
     } else {
@@ -63,7 +49,7 @@ router.get('/:id',blogFinder, async (req:Request, res:Response) => {
     
 });
 
-router.delete('/:id',blogFinder, async (req:Request, res:Response) => {
+router.delete('/:id',blogFinder, async (req:CustomRequest, res:Response) => {
     
     if (req.blog) {
         await req.blog.destroy();
@@ -73,7 +59,7 @@ router.delete('/:id',blogFinder, async (req:Request, res:Response) => {
     }
 });
 
-router.put('/:id',blogFinder, async (req:Request, res:Response) => {
+router.put('/:id',blogFinder, async (req:CustomRequest, res:Response) => {
     
     if (req.blog) {
         await req.blog.update(req.body);
